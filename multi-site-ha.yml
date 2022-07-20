@@ -1,0 +1,202 @@
+# Automatic VMware Hammerspace Anvil HA Deployment
+#
+# Ansible playbook to deploy multiple sites with HA anvils and 2x DSX nodes
+---
+- hosts: localhost
+  become: no
+  gather_facts: False
+  vars_files:
+  - ./hammerspace-clusters-ha.yml
+  vars_prompt:
+    - name: password
+      prompt: Enter the Hammerspace admin password
+    # - name: domain_password
+    #   prompt: Enter the Windows AD domain password for the user specified in the config vars_files
+    - name: vmhost_password
+      prompt: Enter the VMware cluster password for the user specified
+  vars:
+    deploy_properties:
+      guestinfo.init.cluster.domainname: '{{ active_directory.adparams.domain }}'
+      guestinfo.init.cluster.gateway.ipv4_default: '{{ item.default_gateway }}'
+      guestinfo.init.cluster.ntp_servers: '{{ item.ntp_servers }}'
+      guestinfo.init.cluster.dns_servers: '{{ item.dns_servers }}'
+      guestinfo.init.cluster.password: '{{ password }}'
+      guestinfo.init.cluster.metadata.ips: '[{{ item.cluster_ip }}/{{ item.netmask }}]'
+      guestinfo.init.cluster.computer_name: '{{ item.site_name }}'
+      guestinfo.init.nodes.0.hostname: '{{ item.name }}-anvil2'
+      guestinfo.init.nodes.0.ha_mode: 'Secondary'
+      guestinfo.init.nodes.0.features: '[metadata]'
+      guestinfo.init.nodes.0.networks.ens160.roles: '[data,mgmt]'
+      guestinfo.init.nodes.0.networks.ens160.dhcp: False
+      guestinfo.init.nodes.0.networks.ens160.ips: '[{{ item.anvil2_ip }}/{{ item.netmask }}]'
+      guestinfo.init.nodes.0.networks.ens192.roles: '[ha]'
+      guestinfo.init.nodes.0.networks.ens192.dhcp: False
+      guestinfo.init.nodes.0.networks.ens224.roles: '[]'
+      guestinfo.init.nodes.0.networks.ens224.dhcp: False
+      guestinfo.init.nodes.1.hostname: '{{ item.name }}-anvil1'
+      guestinfo.init.nodes.1.ha_mode: 'Primary'
+      guestinfo.init.nodes.1.features: '[metadata]'
+      guestinfo.init.nodes.1.networks.ens160.roles: '[data,mgmt]'
+      guestinfo.init.nodes.1.networks.ens160.dhcp: False
+      guestinfo.init.nodes.1.networks.ens160.ips: '[{{ item.anvil_ip }}/{{ item.netmask }}]'
+      guestinfo.init.nodes.1.networks.ens192.roles: '[ha]'
+      guestinfo.init.nodes.1.networks.ens192.dhcp: False
+      guestinfo.init.nodes.1.networks.ens224.roles: '[]'
+      guestinfo.init.nodes.1.networks.ens224.dhcp: False
+      guestinfo.init.nodes.2.hostname: '{{ item.name }}-dsx1'
+      guestinfo.init.nodes.2.add_volumes: True
+      guestinfo.init.nodes.2.features: '[portal, storage]'
+      guestinfo.init.nodes.2.networks.ens160.roles: '[data,mgmt]'
+      guestinfo.init.nodes.2.networks.ens160.dhcp: False
+      guestinfo.init.nodes.2.networks.ens160.ips: '[{{ item.dsx_ip }}/{{ item.netmask }}]'
+      guestinfo.init.nodes.2.networks.ens192.roles: '[]'
+      guestinfo.init.nodes.2.networks.ens192.dhcp: False
+      guestinfo.init.nodes.2.networks.ens224.roles: '[]'
+      guestinfo.init.nodes.2.networks.ens224.dhcp: False
+      guestinfo.init.nodes.3.hostname: '{{ item.name }}-dsx2'
+      guestinfo.init.nodes.3.add_volumes: True
+      guestinfo.init.nodes.3.features: '[portal, storage]'
+      guestinfo.init.nodes.3.networks.ens160.roles: '[data,mgmt]'
+      guestinfo.init.nodes.3.networks.ens160.dhcp: False
+      guestinfo.init.nodes.3.networks.ens160.ips: '[{{ item.dsx2_ip }}/{{ item.netmask }}]'
+      guestinfo.init.nodes.3.networks.ens192.roles: '[]'
+      guestinfo.init.nodes.3.networks.ens192.dhcp: False
+      guestinfo.init.nodes.3.networks.ens224.roles: '[]'
+      guestinfo.init.nodes.3.networks.ens224.dhcp: False
+
+  tasks:
+  - name: Create Secondary Anvils
+    debugger: on_failed
+    community.vmware.vmware_deploy_ovf:
+      hostname: "{{ item.vmhost_hostname }}"
+      username: "{{ item.vmhost_username }}"
+      password: "{{ vmhost_password }}"
+      folder: "{{ item.vmhost_folder }}"
+      datacenter: "{{ item.vmhost_datacenter }}"
+      datastore: "{{ item.vmhost_datastore }}"
+      cluster: "{{ item.vmhost_cluster }}"
+      resource_pool: "{{ item.vmhost_resource_pool }}"
+      validate_certs: no
+      name: "{{ item.name }}-anvil-2"
+      disk_provisioning: thin
+      networks:
+        "VM Network": "{{ item.vmhost_network_data }}"
+        "VM Network 2": "{{ item.vmhost_network_ha }}"
+        "VM Network 3": "{{ item.vmhost_network_mgmt }}"
+      ova: "{{ image }}"
+      allow_duplicates: no
+      power_on: no
+      inject_ovf_env: yes
+      properties: "{{ deploy_properties | combine({'guestinfo.init.node_index': '0'}) }}"
+    with_items:
+      - "{{ clusters }}"
+
+  - name: Create Primary Anvils
+    debugger: on_failed
+    community.vmware.vmware_deploy_ovf:
+      hostname: "{{ item.vmhost_hostname }}"
+      username: "{{ item.vmhost_username }}"
+      password: "{{ vmhost_password }}"
+      folder: "{{ item.vmhost_folder }}"
+      datacenter: "{{ item.vmhost_datacenter }}"
+      datastore: "{{ item.vmhost_datastore }}"
+      cluster: "{{ item.vmhost_cluster }}"
+      resource_pool: "{{ item.vmhost_resource_pool }}"
+      validate_certs: no
+      name: "{{ item.name }}-anvil-1"
+      disk_provisioning: thin
+      networks:
+        "VM Network": "{{ item.vmhost_network_data }}"
+        "VM Network 2": "{{ item.vmhost_network_ha }}"
+        "VM Network 3": "{{ item.vmhost_network_mgmt }}"
+      ova: "{{ image }}"
+      allow_duplicates: no
+      power_on: no
+      inject_ovf_env: yes
+      properties: "{{ deploy_properties | combine({'guestinfo.init.node_index': '1'}) }}"
+    with_items:
+      - "{{ clusters }}"
+
+  - name: Resize Secondary Anvils
+    community.vmware.vmware_guest:
+      hostname: "{{ item.vmhost_hostname }}"
+      username: "{{ item.vmhost_username }}"
+      password: "{{ vmhost_password }}"
+      folder: "{{ item.vmhost_folder }}"
+      datacenter: "{{ item.vmhost_datacenter }}"
+      datastore: "{{ item.vmhost_datastore }}"
+      cluster: "{{ item.vmhost_cluster }}"
+      resource_pool: "{{ item.vmhost_resource_pool }}"
+      validate_certs: no
+      name: "{{ item.name }}-anvil-2"
+      disk:
+        - size_gb: "{{ anvil_boot }}"
+        - size_gb: "{{ anvil_metadata }}"
+      hardware:
+        num_cpus: "{{ anvil_cpu }}"
+        memory_mb: "{{ anvil_mem }}"
+    delegate_to: localhost
+    with_items:
+      - "{{ clusters }}"
+
+  - name: Resize Primary Anvils
+    community.vmware.vmware_guest:
+      hostname: "{{ item.vmhost_hostname }}"
+      username: "{{ item.vmhost_username }}"
+      password: "{{ vmhost_password }}"
+      folder: "{{ item.vmhost_folder }}"
+      datacenter: "{{ item.vmhost_datacenter }}"
+      datastore: "{{ item.vmhost_datastore }}"
+      cluster: "{{ item.vmhost_cluster }}"
+      resource_pool: "{{ item.vmhost_resource_pool }}"
+      validate_certs: no
+      name: "{{ item.name }}-anvil-1"
+      disk:
+        - size_gb: "{{ anvil_boot }}"
+        - size_gb: "{{ anvil_metadata }}"
+      hardware:
+        num_cpus: "{{ anvil_cpu }}"
+        memory_mb: "{{ anvil_mem }}"
+    delegate_to: localhost
+    with_items:
+      - "{{ clusters }}"
+
+  - name: Start Secondary Anvils
+    community.vmware.vmware_guest:
+      hostname: "{{ item.vmhost_hostname }}"
+      username: "{{ item.vmhost_username }}"
+      password: "{{ vmhost_password }}"
+      folder: "{{ item.vmhost_folder }}"
+      datacenter: "{{ item.vmhost_datacenter }}"
+      datastore: "{{ item.vmhost_datastore }}"
+      cluster: "{{ item.vmhost_cluster }}"
+      resource_pool: "{{ item.vmhost_resource_pool }}"
+      validate_certs: no
+      name: "{{ item.name }}-anvil-2"
+      state: 'powered-on'
+      wait_for_customization: yes
+      wait_for_ip_address: yes
+    delegate_to: localhost
+    with_items:
+      - "{{ clusters }}"
+
+  - name: Start Primary Anvils
+    community.vmware.vmware_guest:
+      hostname: "{{ item.vmhost_hostname }}"
+      username: "{{ item.vmhost_username }}"
+      password: "{{ vmhost_password }}"
+      folder: "{{ item.vmhost_folder }}"
+      datacenter: "{{ item.vmhost_datacenter }}"
+      datastore: "{{ item.vmhost_datastore }}"
+      cluster: "{{ item.vmhost_cluster }}"
+      resource_pool: "{{ item.vmhost_resource_pool }}"
+      validate_certs: no
+      name: "{{ item.name }}-anvil-1"
+      state: 'powered-on'
+      wait_for_customization: yes
+      wait_for_ip_address: yes
+    delegate_to: localhost
+    with_items:
+      - "{{ clusters }}"
+
+

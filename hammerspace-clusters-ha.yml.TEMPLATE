@@ -1,0 +1,78 @@
+# This file contains the configurations of all the hammerspace clusters we want
+# to deploy or change.
+---
+# Config common to all clusters
+hsuser: admin
+image: hammerspace-4.6.6-104.ova
+activationid: '<HAMMERSPACE_ACTIVATION>'
+
+# VM resource parameters
+anvil_cpu: 12
+anvil_mem: 16384  # MB
+anvil_boot: 100 # GB (85 minimum for testing)
+anvil_metadata: 100
+dsx_cpu: 2
+dsx_mem: 4096
+dsx_boot: 100
+dsx_data: 100
+
+# All cluster configs, one list item per cluster
+clusters:
+  - name: example-demo-hq
+    site_name: HQ
+    anvil_ip: <ANVIL_IP_ADDRESS>
+    # HA IP address specification will be supported in the future
+    anvil_ha_ip: <ANVIL_HA_IP_ADDRESS>
+    cluster_ip: <ANVIL_CLUSTER_IP_ADDRESS>
+    anvil2_ip: <ANVIL2_IP_ADDRESS>
+    # HA IP address specification will be supported in the future
+    anvil2_ha_ip: <ANVIL2_HA_IP_ADDRESS>
+    netmask: "24"
+    ha_netmask: "24"
+    dsx_ip: <DSX_IP_ADDRESS>
+    dsx2_ip: <DSX2_IP_ADDRESS>
+    replication_interval: "5"
+    core_site: true
+    dns_servers: '[<DNS1>,<DNS2>]'
+    ntp_servers: '[pool.ntp.org]'
+    default_gateway: <DEFAULT_GATEWAY>
+    vmhost_cluster: ""
+    vmhost_hostname: vcenter.corp.com
+    vmhost_username: user@corp.com
+    vmhost_datacenter: DC
+    vmhost_datastore: '<DATASTORE>'
+    vmhost_folder: '<FULL_FOLDER_PATH>'
+    vmhost_network_data: '<VMNET_DATA>'
+    vmhost_network_mgmt: '<VMNET_MGMT>'
+    vmhost_network_ha: '<VMNET_HA>'
+    vmhost_resource_pool: Resources
+  - name: mbott-demo-az
+    site_name: AZ
+    anvil_ip: <ANVIL_IP_ADDRESS>
+    # HA IP address specification will be supported in the future
+    anvil_ha_ip: <ANVIL_HA_IP_ADDRESS>
+    cluster_ip: <ANVIL_CLUSTER_IP_ADDRESS>
+    anvil2_ip: <ANVIL2_IP_ADDRESS>
+    # HA IP address specification will be supported in the future
+    anvil2_ha_ip: <ANVIL2_HA_IP_ADDRESS>
+    netmask: "24"
+    ha_netmask: "24"
+    dsx_ip: <DSX_IP_ADDRESS>
+    dsx2_ip: <DSX2_IP_ADDRESS>
+    replication_interval: "5"
+    core_site: true
+    dns_servers: '[<DNS1>,<DNS2>]'
+    ntp_servers: '[pool.ntp.org]'
+    default_gateway: <DEFAULT_GATEWAY>
+    vmhost_cluster: ""
+    vmhost_hostname: vcenter.corp.com
+    vmhost_username: user@corp.com
+    vmhost_datacenter: DC
+    vmhost_datastore: '<DATASTORE>'
+    vmhost_folder: '<FULL_FOLDER_PATH>'
+    vmhost_network_data: '<VMNET_DATA>'
+    vmhost_network_mgmt: '<VMNET_MGMT>'
+    vmhost_network_ha: '<VMNET_HA>'
+    vmhost_resource_pool: Resources
+
+...

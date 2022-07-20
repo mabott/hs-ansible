@@ -1,0 +1,128 @@
+---
+- name: Remove virtual machines
+  gather_facts: no
+  vars_files:
+    - hammerspace-clusters-ha.yml
+  vars_prompt:
+    - name: vmhost_password
+      prompt: Enter the VMware cluster password for the user specified
+  # vars:
+  #   ansible_python_interpreter: "/usr/bin/env python3"
+  hosts: localhost
+  tasks:
+    - name: Power off DSX Node 1s
+      with_items:
+        - "{{ clusters }}"
+      community.vmware.vmware_guest_powerstate:
+        hostname: "{{ item.vmhost_hostname }}"
+        username: "{{ item.vmhost_username }}"
+        password: "{{ vmhost_password }}"
+        validate_certs: no
+        folder: "{{ item.vmhost_folder }}"
+        name: "{{ item.name }}-dsx1"
+        state: powered-off
+      delegate_to: localhost
+      register: deploy
+      ignore_errors: yes
+
+    - name: Power off DSX Node 2s
+      with_items:
+        - "{{ clusters }}"
+      community.vmware.vmware_guest_powerstate:
+        hostname: "{{ item.vmhost_hostname }}"
+        username: "{{ item.vmhost_username }}"
+        password: "{{ vmhost_password }}"
+        validate_certs: no
+        folder: "{{ item.vmhost_folder }}"
+        name: "{{ item.name }}-dsx2"
+        state: powered-off
+      delegate_to: localhost
+      register: deploy
+      ignore_errors: yes
+
+    - name: Power off Secondary Anvil Nodes
+      with_items:
+        - "{{ clusters }}"
+      community.vmware.vmware_guest_powerstate:
+        hostname: "{{ item.vmhost_hostname }}"
+        username: "{{ item.vmhost_username }}"
+        password: "{{ vmhost_password }}"
+        validate_certs: no
+        folder: "{{ item.vmhost_folder }}"
+        name: "{{ item.name }}-anvil-2"
+        state: powered-off
+      delegate_to: localhost
+      register: deploy
+
+    - name: Power off Primary Anvil Nodes
+      with_items:
+        - "{{ clusters }}"
+      community.vmware.vmware_guest_powerstate:
+        hostname: "{{ item.vmhost_hostname }}"
+        username: "{{ item.vmhost_username }}"
+        password: "{{ vmhost_password }}"
+        validate_certs: no
+        folder: "{{ item.vmhost_folder }}"
+        name: "{{ item.name }}-anvil-1"
+        state: powered-off
+      delegate_to: localhost
+      register: deploy
+
+    - name: Remove DSX Node 1s
+      with_items:
+        - "{{ clusters }}"
+      community.vmware.vmware_guest:
+        hostname: "{{ item.vmhost_hostname }}"
+        username: "{{ item.vmhost_username }}"
+        password: "{{ vmhost_password }}"
+        validate_certs: no
+        cluster: "{{ item.vmhost_cluster }}"
+        name: "{{ item.name }}-dsx1"
+        state: absent
+      delegate_to: localhost
+      register: facts
+      ignore_errors: yes
+
+    - name: Remove DSX Node 2s
+      with_items:
+        - "{{ clusters }}"
+      community.vmware.vmware_guest:
+        hostname: "{{ item.vmhost_hostname }}"
+        username: "{{ item.vmhost_username }}"
+        password: "{{ vmhost_password }}"
+        validate_certs: no
+        cluster: "{{ item.vmhost_cluster }}"
+        name: "{{ item.name }}-dsx2"
+        state: absent
+      delegate_to: localhost
+      register: facts
+      ignore_errors: yes
+
+    - name: Remove Secondary Anvil Nodes
+      with_items:
+        - "{{ clusters }}"
+      community.vmware.vmware_guest:
+        hostname: "{{ item.vmhost_hostname }}"
+        username: "{{ item.vmhost_username }}"
+        password: "{{ vmhost_password }}"
+        validate_certs: no
+        cluster: "{{ item.vmhost_cluster }}"
+        name: "{{ item.name }}-anvil-2"
+        state: absent
+      delegate_to: localhost
+      register: facts
+
+    - name: Remove Primary Anvil Nodes
+      with_items:
+        - "{{ clusters }}"
+      community.vmware.vmware_guest:
+        hostname: "{{ item.vmhost_hostname }}"
+        username: "{{ item.vmhost_username }}"
+        password: "{{ vmhost_password }}"
+        validate_certs: no
+        cluster: "{{ item.vmhost_cluster }}"
+        name: "{{ item.name }}-anvil-1"
+        state: absent
+      delegate_to: localhost
+      register: facts
+...
