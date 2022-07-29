@@ -1,0 +1,24 @@
+#
+# Configure active directory on all nodes
+#
+---
+- hosts: localhost
+  become: no
+  gather_facts: False
+  vars_files:
+  - ./hammerspace-clusters-ha.yml
+  vars_prompt:
+    - name: ad_password
+      prompt: Enter the domain password for the user specified in the config file
+    - name: password
+      prompt: Enter the Hammerspace admin password
+  vars:
+    tempdict:
+      password: "{{ ad_password }}"
+    adparams: "{{ active_directory | combine(tempdict) }}"
+  tasks:
+    - name: Join AD on all sites
+      include_tasks: multi-site-ad-join.yml
+      with_items:
+        - "{{ clusters }}"
+...
