@@ -1,0 +1,24 @@
+#
+# Add a shared OSV on all nodes
+#
+---
+- hosts: localhost
+  become: no
+  gather_facts: False
+  vars_files:
+  - ./hammerspace-clusters-ha.yml
+  vars_prompt:
+    - name: password
+      prompt: Enter the Hammerspace admin password
+  tasks:
+    - name: Add a Cloud/Object Storage System
+      include_tasks: multi-site-object-system-add.yml
+      with_items:
+        - "{{ clusters }}"
+
+    - name: Add a shared Object Storage Volume
+      include_tasks: multi-site-object-volume-add.yml
+      with_items:
+        - "{{ clusters }}"
+
+...
