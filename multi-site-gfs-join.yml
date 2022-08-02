@@ -1,0 +1,43 @@
+#
+# Create a share on the core site (where core_site = true in hammerspace-clusters.yml)
+# Join all other sites to the share
+#
+---
+- hosts: localhost
+  become: no
+  gather_facts: false
+  vars_files:
+  - ./hammerspace-clusters-ha.yml
+  vars_prompt:
+    - name: password
+      prompt: Enter the Hammerspace admin password
+  tasks:
+  - name: Identify the core site
+    when: item.core_site == true
+    ansible.builtin.set_fact:
+      gfs_source_ip: "{{ item.cluster_ip }}"
+    with_items:
+      - "{{ clusters }}"
+
+  - name: Create a share on core site
+    when: item.core_site == true
+    include_tasks: share-create.yml
+    with_items:
+      - "{{ clusters }}"
+
+  - name: Add share participant sites to the share
+    when: item.core_site == false
+    uri:
+      url: "https://{{ gfs_source_ip }}:8443/mgmt/v1.2/rest/share-replications"
+      user: "{{ hsuser }}"
+      password: "{{ password }}"
+      method: POST
+      body: '{"name":"{{ share_name }}", "shareIdentifier":"{{ share_name }}","remoteSiteMgmtAddress":"{{ item.cluster_ip }}", "username":"{{ hsuser }}","password":"{{ password }}","interval":"{{ item.replication_interval }}"}'
+      force_basic_auth: yes
+      status_code: 200
+      body_format: json
+      validate_certs: no
+      timeout: 60
+    with_items:
+      - "{{ clusters }}"
+...

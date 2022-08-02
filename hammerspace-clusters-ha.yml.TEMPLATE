@@ -16,6 +16,13 @@ dsx_mem: 4096
 dsx_boot: 100
 dsx_data: 100
 
+# Share config (connected to all sites by default)
+share_name: Data
+path: '/data'
+access_permissions: RW
+root_squash: false
+subnet: '*'
+
 # All cluster configs, one list item per cluster
 clusters:
   - name: example-demo-hq
@@ -60,7 +67,7 @@ clusters:
     dsx_ip: <DSX_IP_ADDRESS>
     dsx2_ip: <DSX2_IP_ADDRESS>
     replication_interval: "5"
-    core_site: true
+    core_site: false
     dns_servers: '[<DNS1>,<DNS2>]'
     ntp_servers: '[pool.ntp.org]'
     default_gateway: <DEFAULT_GATEWAY>
