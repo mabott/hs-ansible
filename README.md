@@ -18,4 +18,11 @@ Once the installation is complete and the console displays information about a r
 
 ansible-playbook multi-site-ha-dsx.yml
 
+To join all clusters to a domain
+
+ansible-playbook multi-site-ha-ad.yml
+
+To create a share and add all other sites to it as participants
+
+ansible playbook multi-site-gfs-join.yml
 
