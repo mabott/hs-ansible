@@ -15,7 +15,7 @@
       prompt: Enter the VMware cluster password for the user specified
   vars:
     deploy_properties:
-      guestinfo.init.cluster.domainname: '{{ active_directory.adparams.domain }}'
+      guestinfo.init.cluster.domainname: '{{ active_directory.domain }}'
       guestinfo.init.cluster.gateway.ipv4_default: '{{ item.default_gateway }}'
       guestinfo.init.cluster.ntp_servers: '{{ item.ntp_servers }}'
       guestinfo.init.cluster.dns_servers: '{{ item.dns_servers }}'
